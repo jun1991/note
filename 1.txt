@@ -1,0 +1,5 @@
+curl -XGET 'http:// 192.168.1.72:9200/_count?pretty' -d '{
+	"query": {
+	"match_all": {}
+	}
+}’
