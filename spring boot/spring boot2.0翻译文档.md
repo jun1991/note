@@ -594,6 +594,7 @@ public class Application {
  
 
 
+
 提示：如果你意外运行了两次你的web应用，你会看到一个错误“Port already in use”。 STS用户可以使用重启按钮而不是Run按钮来确保任何现有的实例都被关闭。
 
 ## 运行一个打包好的应用
@@ -970,3 +971,144 @@ initialized with port: 8080
 2014-03-04 13:09:56.501 INFO 41370 --- [ main] o.s.b.s.app.SampleApplication : Started SampleApplication in 2.992 seconds (JVM running for 3.658)
 ```
 
+默认情况下，INFO级别的日志会被打印出来，包含一些启动信息，例如启动程序的用户。如果你需要打印其他日志级别的日志，你可以自己设置。
+
+### 启动失败
+
+如果你的应用程序启动失败，注册的故障分析程序有机会提供一个专用的错误消息和一个具体的操作来解决这个问题。例如，如果你启动的应用程序是8080端口且端口已经被占用，你可以看到如下所示的一些信息：
+
+```java
+***************************
+APPLICATION FAILED TO START
+***************************
+Description:
+Embedded servlet container failed to start. Port 8080 was already in use.
+Action:
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+```
+
+> **注意**
+>
+> Spring Boot提供了很多故障分析实现，你可以添加你自定义的故障分析实现。
+
+如果没有故障分析器可以处理的异常，你仍然可以显示完整的条件报告以更好地理解哪里出了问题。这样的话，你需要在`org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener`启动属性调试或者日志调试。例如，如果你通过java -jar运行应用程序，你可以如下所示，启动属性调试：
+
+```shell
+java -jar myproject-0.0.1-SNAPSHOT.jar --debug
+```
+
+### 自定义Banner
+
+启动的时候，banner打印可以通过添加banner.txt文件到你的classpath目录下或者设置`spring.banner.location`属性指定文件路径的方式实现。如果文件不是UTF-8编码的话，需要通过`spring.banner.charset`属性设置编码。除了文本文件之外，你还可以添加一个 banner.gif, banner.jpg或者banner.png到你的classpath下或者通过设置`spring.banner.image.location`属性的方式去指定。图像会被转换成一个ASCII艺术表示，并在任何文本banner上面打印。
+
+在你的banner.txt文件中，你可以使用如下所示的任何占位符：
+
+| 变量                                                         | 描述                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ${application.version}                                       | 应用程序的版本号，正如在MANIFEST.MF中所声明的那样。例如，Implementation-Version: 1.0会被打印为1.0 |
+| ${application.formatted-version}                             | 应用程序的版本号，正如在MANIFEST.MF中所声明的那样，会被格式化（周围有括号和前缀v）。例如（v1.0） |
+| ${spring-boot.version}                                       | 使用的Spring Boot版本，例如：2.0.3.RELEASE                   |
+| ${spring-boot.formatted-version}                             | 格式化使用的Spring Boot版本（周围有括号和前缀v）。例如（v2.0.3.RELEASE） |
+| ${Ansi.Name}  (或者 ${AnsiColor.NAME},${AnsiBackground.NAME},${AnsiStyle.NAME}) | 名字是ANSI转义码的名称。有关详细信息，请参见[AnsiPropertySource](https://github.com/spring-projects/spring-boot/blob/v2.0.3.RELEASE/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/ansi/AnsiPropertySource.java) |
+| ${application.title}                                         | 应用程序的标题，正如在MANIFEST.MF中所声明的那样。例如：Implementation-Title: MyApp会被打印为MyApp |
+
+> **提示**
+>
+> 你可以通过设置`spring.main.banner-mode`属性决定banner是否在控制台、日志、或者全部不打印。
+
+打印banner是一个单例注册的bean，名字是：springBootBanner
+
+> **警告**
+>
+> YAML中off映射为false，因此，如果你想要禁用应用程序中的banner，请务必添加引号，如下所示：
+>
+> ```yaml
+> spring:
+> 	main:
+> 		banner-mode: "off"
+> ```
+
+### 自定义SpringApplication
+
+如果 SpringApplication默认值不符合你的要求，您可以创建一个本地实例并定制它。例如，关闭banner，你可以这样做：
+
+```java
+public static void main(String[] args) {
+	SpringApplication app = new SpringApplication(MySpringConfiguration.class);
+	app.setBannerMode(Banner.Mode.OFF);
+	app.run(args);
+}
+```
+
+> **警告**
+>
+> 传递给SpringApplication的构造器参数是Spring bean的配置源。大部分情况下，这些classes都是引用了 @Configuration的，但是它们也可以是XML配置的引用或者应该被扫描的包。
+
+使用application.properties文件可以配置SpringApplication。
+
+完成的配置项列表，可以查看[SpringApplication Javadoc](https://docs.spring.io/spring-boot/docs/2.0.3.RELEASE/api/org/springframework/boot/SpringApplication.html)
+
+### Fluent Builder API(流式api)
+
+如果您需要构建一个ApplicationContext层次结构（具有父/子关系的多个上下文）或者你更喜欢使用流式api，你可以使用SpringApplicationBuilder。
+
+SpringApplicationBuilder让你将多个方法调用链在一起，父类和子方法让您创建一个层次结构。如下所示：
+
+```java
+new SpringApplicationBuilder()
+	.sources(Parent.class)
+	.child(Application.class)
+	.bannerMode(Banner.Mode.OFF)
+	.run(args);
+```
+
+> **警告**
+>
+> 在创建ApplicationContext层次结构时，有一些限制。例如，Web组件必须包含在子环境中，同样的环境也用于父类和子环境。有关详细信息，请参见[SpringApplicationBuilder Javadoc](https://docs.spring.io/spring-boot/docs/2.0.3.RELEASE/api/org/springframework/boot/builder/SpringApplicationBuilder.html)
+
+### 应用程序事件（Events）和监听器（Listeners）
+
+除了通常的Spring框架事件之外，如[ContextRefreshedEvent](https://docs.spring.io/spring/docs/5.0.7.RELEASE/javadoc-api/org/springframework/context/event/ContextRefreshedEvent.html)，SpringApplication会发送一些额外的应用程序事件。
+
+> **警告**
+>
+> 有些事件实际上是在ApplicationContext被创建之前触发的，所以你不能在这些事件上注册一个监听器，例如@Bean。你可以通过`SpringApplication.addListeners(…)`方法或者`SpringApplicationBuilder.listeners(…)`方法去注册监听器。
+>
+> 如果你想自动注入监听器，不管应用程序是如何创建的，你可以添加`META-INF/spring.factories`文件到你的项目，通过使用`org.springframework.context.ApplicationListener`键去引入你的监听器，如下所示
+>
+> ```properties
+> org.springframework.context.ApplicationListener=com.example.project.MyListener
+> ```
+
+应用程序事件按照以下顺序发送，如您的应用程序运行:
+
+1. ApplicationStartingEvent是在运行开始时发送的，是在任何处理之前，除了侦听器和初始化器的注册之外。
+2. ApplicationEnvironmentPreparedEvent运行在 上下文创建前Environment创建后。
+3. ApplicationPreparedEvent是在刷新开始之前，bean定义被加载之后运行。
+4. ApplicationStartedEvent运行在 应用程序的command-line runners之前，上下文被刷新后。
+5. ApplicationReadyEvent运行在command-line runners被执行后，表明程序已经准备完毕，可以提供服务了。
+6. ApplicationFailedEvent运行在异常发生时。
+
+> **提示**
+>
+> 很多时候你的应用程序并不需要事件，但是知道它们的存在是很方便的。Spring Boot使用事件来处理各种各样的任务。
+
+应用程序事件是通过使用Spring Framework的事件发布机制发送的。此机制确保在子上下文中发布给监听器的事件也在任何父上下文中发布给监听器。因此，如果您的应用程序使用SpringApplication实例的层次结构，那么监听器可能会收到同一类型的应用程序事件的多个实例。
+
+为了让你的监听者能够区分事件的上下文和子上下文的事件，它应该请求注入它的应用程序上下文，然后将注入的上下文与事件的上下文进行比较。可以通过实现ApplicationContextAware来注入上下文，或者，如果监听者是一个bean，可以使用@Autowired。
+
+### Web环境变量
+
+SpringApplication试图为您创建正确的ApplicationContext类型。用于确定WebApplicationType的算法相当简单：
+
+- 如果Spring MVC存在，AnnotationConfigServletWebServerApplicationContext会被使用
+- 如果Spring  MVC不存在，Spring  WebFlux存在，则AnnotationConfigReactiveWebServerApplicationContext会被使用
+- 其他情况，AnnotationConfigApplicationContext会被使用
+
+这意味着如果您使用的是Spring MVC和Spring WebFlux中的新WebClient相同的应用程序，默认情况下将使用Spring MVC。你可以通过调用`setWebApplicationType(WebApplicationType)`来轻松地覆盖它。
+
+也可以调用setApplicationContextClass（...）完全控制使用ApplicationContext的类型。
+
+> **提示**
+>
+> 在JUnit测试中使用SpringApplication，通常需要调用`setWebApplicationType(WebApplicationType.NONE)`。
