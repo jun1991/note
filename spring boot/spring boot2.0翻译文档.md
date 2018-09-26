@@ -210,7 +210,8 @@ Starters包含许多依赖项，可以满足您需要快速地启动一个项目
 
        SpringBoot应用的starters
 
-       
+
+​       
 
 | 名字                                       | 描述                                       | POM                                      |
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
@@ -592,6 +593,7 @@ public class Application {
 
  
 
+
 提示：如果你意外运行了两次你的web应用，你会看到一个错误“Port already in use”。 STS用户可以使用重启按钮而不是Run按钮来确保任何现有的实例都被关闭。
 
 ## 运行一个打包好的应用
@@ -815,4 +817,156 @@ restart.include.projectcommon=/mycorp-myproj-[\\w-]+\.jar
 
 > **注意**
 >
+>所有属性的key都必须是唯一的。例如属性的前缀restart.include. 或者restart.exclude.都是经过深思熟虑设计的。
+
+> **提示**
 >
+> 所有classpath下的META-INF/spring-devtools.properties文件都是会被加载的。你可以打包进你的项目内，或者在你项目librarie（库）里面也是可以的。
+
+### 已知的限制
+
+在使用ObjectInputStream功能的时候，重启功能对于项目的反序列化支持并不是很好。如果你需要反序列化数据，你也许需要使用spring的`ConfigurableObjectInputStream`结合`Thread.currentThread().getContextClassLoader()`。
+
+不幸的是，一些第三方库在不考虑上下文类加载器的情况下反序列化。如果您发现了这样的问题，您需要向原作者请求修复。
+
+## LiveReload
+
+`spring-boot-devtools`模块包含了一个嵌入式的LiveReload服务，它可以在资源发生改变的时候触发浏览器的刷新事件。LiveReload在 [livereload.com](https://livereload.com/extensions/)中提供了Chrome、Firefox 和Safari 浏览器免费的扩展程序。
+
+当你不希望LiveReload在你程序 运行的时候启动，你可以通过设置属性`spring.devtools.livereload.enabled=false`的方式禁止。
+
+> **注意**
+>
+> 你只能同时运行一个LiveReload服务。在你启动程序的时候，需要确保没有另外一个LiveReload服务运行。如果你在你的IDE启动多个应用程序，只有第一个LiveReload是被支持的。
+
+## 全局设置
+
+你可以配置一个全局的devtools，在你的$HOME文件夹添加一个文件，文件名为`.spring-boot-devtools.properties`(注意这里的文件名的前缀是“.”)。这个文件里面的所有属性配置，能在你这台机器的所有Spring Boot应用程序生效，当前，是需要使用了devtools的。
+
+~/.spring-boot-devtools.properties.
+
+```properties
+spring.devtools.reload.trigger-file=.reloadtrigger
+```
+
+## 远程的应该程序
+
+Spring Boot developer工具并不局限于本地开发。在远程运行应用程序时，您还可以使用几个特性。远程支持选择性加入。启动它，您需要确保devtools包含在重新打包的文件中，需要如下所示配置：
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+            	<excludeDevtools>false</excludeDevtools>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+然后你需要设置如下 属性：`spring.devtools.remote.secret`，如下所示：
+
+```properties
+spring.devtools.remote.secret=mysecret
+```
+
+> **警告**
+>
+> 在远程应用程序中启用spring-boot-devtools存在安全风险。你绝对不能在生产环境开启这个特性。
+
+远程devtools支持分为两部分：一个服务器端端点，它接受连接和您在IDE中运行的客户端应用程序。当`spring.devtools.remote.secret`属性设置时，服务器端组件将自动启用。客户端组件需要手动启动。
+
+### 运行一个远程客户端程序
+
+远程客户端应用程序是被设计成运行在你的IDE的。你需要和你链接的远程项目保持运行相同的`org.springframework.boot.devtools.RemoteSpringApplication`。应用程序的单一必需参数是它连接的远程URL。
+
+例如，如果你有一个应用程序，程序名为`my-app`，运行在你的Eclipse或者STS，你需要部署在Cloud Foundry，具体操作如下：
+
+- 在Run菜单选择Run Configurations…
+- 创建一个Java应用程序“launch configuration”
+- 浏览“my-app”项目
+- 在main函数使用`org.springframework.boot.devtools.RemoteSpringApplication` 
+- 添加https://myapp.cfapps.io参数去你的程序（或者你的远程URL）
+
+一个运行的远程客户端可能如下所示：
+
+```java
+. ____ _ __ _ _
+/\\ / ___'_ __ _ _(_)_ __ __ _ ___ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | | _ \___ _ __ ___| |_ ___ \ \ \ \
+\\/ ___)| |_)| | | | | || (_| []::::::[] / -_) ' \/ _ \ _/ -_) ) ) ) )
+' |____| .__|_| |_|_| |_\__, | |_|_\___|_|_|_\___/\__\___|/ / / /
+=========|_|==============|___/===================================/_/_/_/
+:: Spring Boot Remote :: 2.0.3.RELEASE
+2015-06-10 18:25:06.632 INFO 14938 --- [ main] o.s.b.devtools.RemoteSpringApplication: Starting RemoteSpringApplication on pwmbp with PID 14938 (/Users/pwebb/projects/spring-boot/code/spring-boot-devtools/target/classes started by pwebb in /Users/pwebb/projects/spring-boot/code/spring-boot-samples/spring-boot-sample-devtools)
+2015-06-10 18:25:06.671 INFO 14938 --- [ main] s.c.a.AnnotationConfigApplicationContext: Refreshing org.springframework.context.annotation.AnnotationConfigApplicationContex @2a17b7b6: startupdate [Wed Jun 10 18:25:06 PDT 2015]; root of context hierarchy
+2015-06-10 18:25:07.043 WARN 14938 --- [ main] o.s.b.d.r.c.RemoteClientConfiguration : The connection to http://localhost:8080 is insecure. You should use a URL starting with 'https://'.
+2015-06-10 18:25:07.074 INFO 14938 --- [ main] o.s.b.d.a.OptionalLiveReloadServer :LiveReload server is running on port 35729
+2015-06-10 18:25:07.130 INFO 14938 --- [ main] o.s.b.devtools.RemoteSpringApplication : Started RemoteSpringApplication in 0.74 seconds (JVM running for 1.105)
+```
+
+> **注意**
+>
+> 因为远程客户端使用与真实应用程序相同的类路径，所以它可以直接读取应用程序属性。这就是`spring.devtools.remote.secret`属性被读取并传递给服务器进行身份验证的方式。
+
+> **提示**
+>
+> 使用https：//作为连接协议是明智的，因为数据都会被加密，不用担心密码等信息会被中途拦截。
+
+> **提示**
+>
+> 如果你远端程序需要使用代理，需要配置`spring.devtools.remote.proxy.host`和 `spring.devtools.remote.proxy.port`属性
+
+### 远程更新
+
+你程序的classpath发生改变的时候本地重启会被远程客户端监听器监听到。任何的修改都会被推送到远端程序（如果需要）并且触发重启。在你本地没有云服务的情况下，如果您对一个特性进行迭代，这将是很有帮助的。通常，远程更新和重启比完整的重建和部署周期要快得多。
+
+> **注意**
+>
+> 文件只会在远程客户端启动的时候被监控。如果你在程序启动前修改远程客户端，修改的东西是不会被推送到远程服务端的。
+
+# 打包生产环境的应用程序
+
+可执行jar可以用于生产环境部署。由于它们是独立的，它们也非常适合基于云的部署。
+
+对于额外的“生产就绪”特性，诸如：健康、统计、rest标准或者JMX结束点，可以添加`spring-boot-actuator`
+
+# 延伸阅读
+
+您现在应该了解如何使用Spring Boot和一些您应该遵循的最佳实践。您现在可以深入了解特定的Spring Boot特性，或者你可以跳过前面，阅读Spring Boot的“生产就绪”方面的内容
+
+# Spring Boot特性
+
+本章将深入的介绍Spring Boot特性。在这里，您可以了解您可能想要使用和定制的关键特性。
+
+## SpringApplication
+
+SpringApplication类提供了一种方便的方式来引导从main（）方法启动的Spring应用程序。在很多时候，你可以委托SpringApplication.run静态方法，如下所示：
+
+```java
+public static void main(String[] args) {
+	SpringApplication.run(MySpringConfiguration.class, args);
+}
+```
+
+当你的应用程序启动，你可以看到一些类似如下所示的输出：
+
+```java
+. ____ _ __ _ _
+/\\ / ___'_ __ _ _(_)_ __ __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+\\/ ___)| |_)| | | | | || (_| | ) ) ) )
+' |____| .__|_| |_|_| |_\__, | / / / /
+=========|_|==============|___/=/_/_/_/
+:: Spring Boot :: v2.0.3.RELEASE
+2013-07-31 00:08:16.117 INFO 56603 --- [ main] o.s.b.s.app.SampleApplication : Starting SampleApplication v0.1.0 on mycomputer with PID 56603 (/apps/myapp.jar started by pwebb)
+2013-07-31 00:08:16.166 INFO 56603 --- [ main]
+ationConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@6e5a8246:startup date [Wed Jul 31 00:08:16 PDT 2013]; root of context hierarchy
+2014-03-04 13:09:54.912 INFO 41370 --- [ main] .t.TomcatServletWebServerFactory :Server
+initialized with port: 8080
+2014-03-04 13:09:56.501 INFO 41370 --- [ main] o.s.b.s.app.SampleApplication : Started SampleApplication in 2.992 seconds (JVM running for 3.658)
+```
+
