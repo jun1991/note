@@ -656,6 +656,7 @@ public class Application {
 
 
 
+
 提示：如果你意外运行了两次你的web应用，你会看到一个错误“Port already in use”。 STS用户可以使用重启按钮而不是Run按钮来确保任何现有的实例都被关闭。
 
 ## 运行一个打包好的应用
