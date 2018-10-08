@@ -595,6 +595,7 @@ public class Application {
 
 
 
+
 提示：如果你意外运行了两次你的web应用，你会看到一个错误“Port already in use”。 STS用户可以使用重启按钮而不是Run按钮来确保任何现有的实例都被关闭。
 
 ## 运行一个打包好的应用
@@ -1112,3 +1113,122 @@ SpringApplication试图为您创建正确的ApplicationContext类型。用于确
 > **提示**
 >
 > 在JUnit测试中使用SpringApplication，通常需要调用`setWebApplicationType(WebApplicationType.NONE)`。
+
+### 访问应用程序参数
+
+如果你需要传递给你的应用程序SpringApplication.run(…)参数，你可以注入一个bean：`org.springframework.boot.ApplicationArguments`。ApplicationArguments接口支持原生的String[]参数以及解析的选项和非选项参数，如下所示：
+
+```java
+import org.springframework.boot.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.stereotype.*;
+
+@Component
+public class MyBean {
+    @Autowired
+    public MyBean(ApplicationArguments args) {
+        boolean debug = args.containsOption("debug");
+        List<String> files = args.getNonOptionArgs();
+        // if run with "--debug logfile.txt" debug=true, files=["logfile.txt"]
+    }
+}
+```
+
+> **提示**
+>
+> Spring Boot还用Spring环境注册一个CommandLinePropertySource。这让你可以通过@Value注解注入一个单例应用参数。
+
+### 使用 ApplicationRunner 或者CommandLineRunner
+
+如果你需要一些特定的代码在SpringApplication启动完成的时候运行一次，你可以实现ApplicationRunner或者CommandLineRunner接口。两个接口都是同样的方法运行，都提供唯一的run方法，在springapplication.run(...)完成之前调用。
+
+CommandLineRunner接口提供一个简单的字符串数组参数，而ApplicationRunner接口使用前面讨论过的ApplicationArguments参数。CommandLineRunner接口提供的run方法如下所示：
+
+```java
+import org.springframework.boot.*;
+import org.springframework.stereotype.*;
+@Component
+public class MyBean implements CommandLineRunner {
+    public void run(String... args) {
+   	 // Do something...
+	}
+}
+```
+
+如果几个CommandLineRunner或者ApplicationRunner 实例被找到，而且必须以特定的顺序调用。你可以实现 `org.springframework.core.Ordered`接口或者使用`org.springframework.core.annotation.Order`注解。
+
+### 退出应用程序
+
+每个spring应用程序都向JVM注册一个关机钩子，以确保在退出时，ApplicationContext会优雅地关闭。所有标准的Spring生命周期回调（比如DisposableBean接口或者@PreDestroy注解）会被调用。
+
+另外，beans可以实现`org.springframework.boot.ExitCodeGenerator`接口来做到当`SpringApplication.exit()`执行时，此beans可以执行一些特殊的代码。如下所示：
+
+```java
+@SpringBootApplication
+public class ExitCodeApplication {
+    @Bean
+    public ExitCodeGenerator exitCodeGenerator() {
+        return () -> 42;
+    }
+    public static void main(String[] args) {
+   		System.exit(SpringApplication
+                    .exit(SpringApplication.run(ExitCodeApplication.class, args)));
+    }
+}
+```
+
+另外，`ExitCodeGenerator`接口可以通过异常的方式实现。当遇到这样的异常的时候，Spring Boot返回实现了getExitCode（）方法提供的出口代码。
+
+### 管理功能
+
+通过指定`spring.application.admin.enabled`属性 ，可以为应用程序启用管理员相关特性。这暴露了MBeanServer平台的SpringApplicationAdminMXBean。您可以使用该特性远程管理Spring Boot应用程序。这个特性对于任何服务包装器实现都是有用的。
+
+> **提示**
+>
+> 如果你想知道应用程序使用的是哪个HTTP端口，你可以用 `local.server.port`属性获取。
+
+> **警告**
+>
+> 在启用这个特性时要小心，因为MBean公开了关闭应用程序的方法
+
+## 外部化配置
+
+Spring Boot可以让你的配置外部化，因此你可以用同一份代码在不同的环境工作。你可以使用properties文件，YAML文件，环境变量，和命令行参数的方式外部化配置。使用 @Value注解，通过spring抽象的环境变量，或者通过@ConfigurationProperties注解绑定到构造函数，属性值都可以直接注入你的beans。
+
+Spring Boot使用一个非常特殊的PropertySource order，它被设计为允许合理地覆盖值。经过深思熟虑，属性按照以下方式排序：
+
+1. 在你的home目录的Devtools全局设置属性（当devtools处于活动状态时，~/.spring-boot-
+   devtools.properties）
+2. 你的测试类中的@TestPropertySource注解
+3. 你的测试类中的 @SpringBootTest#properties 注解
+4. 命令行参数
+5. SPRING_APPLICATION_JSON属性（嵌入在环境变量或系统属性中的内联JSON）
+6. ServletConfig初始化参数
+7. ServletContext初始化参数
+8. JNDI属性：java:comp/env
+9. Java系统属性（System.getProperties()）
+10. OS环境变量
+11. RandomValuePropertySource中的random.*属性
+12. 你的jar包的外部的应用程序的特殊概要文件（application-
+    {profile}.properties和YAML形态）
+13. 你的jar包的内部的应用程序的特殊概要文件（application-
+    {profile}.properties和YAML形态）
+14. 在包装jar之外的应用程序属性（application.properties和YAML形态）
+15. 在包装jar之内的应用程序属性（application.properties和YAML形态）
+16. 你的@Configuration类的@PropertySource注解
+17. 默认属性（通过设置指定`SpringApplication.setDefaultProperties`）
+
+提供一个具体的例子，假如你开发了一个使用name属性的@Component，如下面的例子所示：
+
+```java
+import org.springframework.stereotype.*;
+import org.springframework.beans.factory.annotation.*;
+
+@Component
+public class MyBean {
+    @Value("${name}")
+    private String name;
+    // ...
+}
+```
+
