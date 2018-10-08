@@ -1,40 +1,59 @@
-<link rel="stylesheet" href="http://yandex.st/highlightjs/6.2/styles/googlecode.min.css">
+**目录**
 
-<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
-
-<script src="http://yandex.st/highlightjs/6.2/highlight.min.js"></script>
-
-<script>hljs.initHighlightingOnLoad();</script>
-
-<script type="text/javascript">
-
- $(document).ready(function(){
-
- $("h2,h3,h4,h5,h6").each(function(i,item){
-
- var tag = $(item).get(0).localName;
-
- $(item).attr("id","wow"+i);
-
- $("#category").append('<a class="new'+tag+'" href="#wow'+i+'">'+$(this).text()+'</a></br>');
-
- $(".newh2").css("margin-left",0);
-
- $(".newh3").css("margin-left",20);
-
- $(".newh4").css("margin-left",40);
-
- $(".newh5").css("margin-left",60);
-
- $(".newh6").css("margin-left",80);
-
- });
-
- });
-
-</script>
-
-<div id="category"></div>
+* [使用spring boot](#%E4%BD%BF%E7%94%A8spring-boot)
+  * [构建系统](#%E6%9E%84%E5%BB%BA%E7%B3%BB%E7%BB%9F)
+  * [依赖管理（dependency management）](#%E4%BE%9D%E8%B5%96%E7%AE%A1%E7%90%86dependency-management)
+  * [Maven](#maven)
+  * [Gradle](#gradle)
+  * [Ant](#ant)
+  * [Starters](#starters)
+* [构建你的代码](#%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84%E4%BB%A3%E7%A0%81)
+  * [使用“default”（默认）包](#%E4%BD%BF%E7%94%A8default%E9%BB%98%E8%AE%A4%E5%8C%85)
+  * [确定主应用程序类（Main Application Class）](#%E7%A1%AE%E5%AE%9A%E4%B8%BB%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%B1%BBmain-application-class)
+* [配置类（Configuration Classes）](#%E9%85%8D%E7%BD%AE%E7%B1%BBconfiguration-classes)
+  * [引入额外的配置类](#%E5%BC%95%E5%85%A5%E9%A2%9D%E5%A4%96%E7%9A%84%E9%85%8D%E7%BD%AE%E7%B1%BB)
+  * [引入XML配置](#%E5%BC%95%E5%85%A5xml%E9%85%8D%E7%BD%AE)
+* [自动注入（Auto\-configuration）](#%E8%87%AA%E5%8A%A8%E6%B3%A8%E5%85%A5auto-configuration)
+  * [逐步更换自动配置](#%E9%80%90%E6%AD%A5%E6%9B%B4%E6%8D%A2%E8%87%AA%E5%8A%A8%E9%85%8D%E7%BD%AE)
+  * [禁用特定的自动配置类](#%E7%A6%81%E7%94%A8%E7%89%B9%E5%AE%9A%E7%9A%84%E8%87%AA%E5%8A%A8%E9%85%8D%E7%BD%AE%E7%B1%BB)
+* [Spring Beans 和 依赖注入（Dependency Injection）](#spring-beans-%E5%92%8C-%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5dependency-injection)
+* [使用@SpringBootApplication注解](#%E4%BD%BF%E7%94%A8springbootapplication%E6%B3%A8%E8%A7%A3)
+* [启动你的应用程序](#%E5%90%AF%E5%8A%A8%E4%BD%A0%E7%9A%84%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
+  * [在IDE运行](#%E5%9C%A8ide%E8%BF%90%E8%A1%8C)
+  * [运行一个打包好的应用](#%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AA%E6%89%93%E5%8C%85%E5%A5%BD%E7%9A%84%E5%BA%94%E7%94%A8)
+  * [使用Maven Plugin](#%E4%BD%BF%E7%94%A8maven-plugin)
+  * [使用Gradle Plugin](#%E4%BD%BF%E7%94%A8gradle-plugin)
+  * [热部署（Hot Swapping）](#%E7%83%AD%E9%83%A8%E7%BD%B2hot-swapping)
+* [开发者工具](#%E5%BC%80%E5%8F%91%E8%80%85%E5%B7%A5%E5%85%B7)
+  * [属性默认值](#%E5%B1%9E%E6%80%A7%E9%BB%98%E8%AE%A4%E5%80%BC)
+  * [自动重启](#%E8%87%AA%E5%8A%A8%E9%87%8D%E5%90%AF)
+    * [条件评估中记录变更](#%E6%9D%A1%E4%BB%B6%E8%AF%84%E4%BC%B0%E4%B8%AD%E8%AE%B0%E5%BD%95%E5%8F%98%E6%9B%B4)
+    * [资源排除](#%E8%B5%84%E6%BA%90%E6%8E%92%E9%99%A4)
+    * [查看额外的路径](#%E6%9F%A5%E7%9C%8B%E9%A2%9D%E5%A4%96%E7%9A%84%E8%B7%AF%E5%BE%84)
+    * [禁用重启](#%E7%A6%81%E7%94%A8%E9%87%8D%E5%90%AF)
+    * [使用触发文件](#%E4%BD%BF%E7%94%A8%E8%A7%A6%E5%8F%91%E6%96%87%E4%BB%B6)
+    * [自定义重启类加载器](#%E8%87%AA%E5%AE%9A%E4%B9%89%E9%87%8D%E5%90%AF%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8)
+    * [已知的限制](#%E5%B7%B2%E7%9F%A5%E7%9A%84%E9%99%90%E5%88%B6)
+  * [LiveReload](#livereload)
+  * [全局设置](#%E5%85%A8%E5%B1%80%E8%AE%BE%E7%BD%AE)
+  * [远程的应该程序](#%E8%BF%9C%E7%A8%8B%E7%9A%84%E5%BA%94%E8%AF%A5%E7%A8%8B%E5%BA%8F)
+    * [运行一个远程客户端程序](#%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AA%E8%BF%9C%E7%A8%8B%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%A8%8B%E5%BA%8F)
+    * [远程更新](#%E8%BF%9C%E7%A8%8B%E6%9B%B4%E6%96%B0)
+* [打包生产环境的应用程序](#%E6%89%93%E5%8C%85%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E7%9A%84%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
+* [延伸阅读](#%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB)
+* [Spring Boot特性](#spring-boot%E7%89%B9%E6%80%A7)
+  * [SpringApplication](#springapplication)
+    * [启动失败](#%E5%90%AF%E5%8A%A8%E5%A4%B1%E8%B4%A5)
+    * [自定义Banner](#%E8%87%AA%E5%AE%9A%E4%B9%89banner)
+    * [自定义SpringApplication](#%E8%87%AA%E5%AE%9A%E4%B9%89springapplication)
+    * [Fluent Builder API(流式api)](#fluent-builder-api%E6%B5%81%E5%BC%8Fapi)
+    * [应用程序事件（Events）和监听器（Listeners）](#%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E4%BA%8B%E4%BB%B6events%E5%92%8C%E7%9B%91%E5%90%AC%E5%99%A8listeners)
+    * [Web环境变量](#web%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F)
+    * [访问应用程序参数](#%E8%AE%BF%E9%97%AE%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%8F%82%E6%95%B0)
+    * [使用 ApplicationRunner 或者CommandLineRunner](#%E4%BD%BF%E7%94%A8-applicationrunner-%E6%88%96%E8%80%85commandlinerunner)
+    * [退出应用程序](#%E9%80%80%E5%87%BA%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
+    * [管理功能](#%E7%AE%A1%E7%90%86%E5%8A%9F%E8%83%BD)
+  * [外部化配置](#%E5%A4%96%E9%83%A8%E5%8C%96%E9%85%8D%E7%BD%AE)
 
 
 
@@ -632,6 +651,7 @@ public class Application {
        如果你不能直接在你的IDE引入项目，您可以通过使用构建插件来生成IDE元数据。Maven包含Eclipse和IDEA的插件。Gradle为各种ide提供插件。
 
  
+
 
 
 
