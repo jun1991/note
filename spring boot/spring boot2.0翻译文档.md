@@ -1,3 +1,7 @@
+[TOC]
+
+
+
 #  使用spring boot
 
 本章节是介绍如何使用spring boot。蕴含的主题诸如如何构建系统、自动化配置（auto-configuration）和如何去运行你的应用。我们还介绍了一些Spring Boot最佳实践（他仅仅是另外一个你可以使用的库），这仅仅是一些建议，如果使用的话，会使你开发变得更简单一点。
@@ -777,7 +781,7 @@ spring.devtools.restart.exclude=static/**,public/**
 >
 > 如果你需要在原来忽略资源的基础上添加自己需要忽略的资源，使用`spring.devtools.restart.additional-exclude`属性代替即可
 
-###查看额外的路径
+### 查看额外的路径
 
 当你想要在修改你应用程序classpath以外的的文件也可以触发自动重启。可以通过配置`spring.devtools.restart.additional-paths`属性来加入监听范围。你可以使用`spring.devtools.restart.exclude`属性来排除前面控制额外路径下的变化是否会触发一个完整的重启或重新加载。
 
