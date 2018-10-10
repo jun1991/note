@@ -1,4 +1,4 @@
-**目录**
+# **目录**
 
 * [使用spring boot](#%E4%BD%BF%E7%94%A8spring-boot)
   * [构建系统](#%E6%9E%84%E5%BB%BA%E7%B3%BB%E7%BB%9F)
@@ -54,6 +54,17 @@
     * [退出应用程序](#%E9%80%80%E5%87%BA%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
     * [管理功能](#%E7%AE%A1%E7%90%86%E5%8A%9F%E8%83%BD)
   * [外部化配置](#%E5%A4%96%E9%83%A8%E5%8C%96%E9%85%8D%E7%BD%AE)
+    * [配置随机值](#%E9%85%8D%E7%BD%AE%E9%9A%8F%E6%9C%BA%E5%80%BC)
+    * [访问命令行属性](#%E8%AE%BF%E9%97%AE%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%B1%9E%E6%80%A7)
+    * [应用程序属性文件](#%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%B1%9E%E6%80%A7%E6%96%87%E4%BB%B6)
+    * [Profile\-specific属性](#profile-specific%E5%B1%9E%E6%80%A7)
+    * [属性中的占位符](#%E5%B1%9E%E6%80%A7%E4%B8%AD%E7%9A%84%E5%8D%A0%E4%BD%8D%E7%AC%A6)
+    * [使用YAML代替Properties](#%E4%BD%BF%E7%94%A8yaml%E4%BB%A3%E6%9B%BFproperties)
+      * [加载YAML](#%E5%8A%A0%E8%BD%BDyaml)
+      * [在Spring环境中公开YAML作为属性](#%E5%9C%A8spring%E7%8E%AF%E5%A2%83%E4%B8%AD%E5%85%AC%E5%BC%80yaml%E4%BD%9C%E4%B8%BA%E5%B1%9E%E6%80%A7)
+      * [Multi\-profile YAML文件](#multi-profile-yaml%E6%96%87%E4%BB%B6)
+      * [YAML缺点](#yaml%E7%BC%BA%E7%82%B9)
+    * [类型安全的配置属性](#%E7%B1%BB%E5%9E%8B%E5%AE%89%E5%85%A8%E7%9A%84%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7)
 
 
 
