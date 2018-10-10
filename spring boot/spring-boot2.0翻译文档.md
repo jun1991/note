@@ -660,6 +660,7 @@ public class Application {
 
 
 
+
 提示：如果你意外运行了两次你的web应用，你会看到一个错误“Port already in use”。 STS用户可以使用重启按钮而不是Run按钮来确保任何现有的实例都被关闭。
 
 ### 运行一个打包好的应用
@@ -1293,6 +1294,313 @@ public class MyBean {
     @Value("${name}")
     private String name;
     // ...
+}
+```
+
+在你的应用程序的classpath（例如，在你的jar包中）对于name有一个application.properties文件可以提供一个合理的默认值。当在一个新的环境中运行的时候，application.properties文件可以在jar包外面重写name的值。你可以使用特定的命令行开关启动（例如，`java -jar app.jar --name="Spring"`）。
+
+> **提示**
+>
+> SPRING_APPLICATION_JSON属性可以在命令行中提供环境变量。例如，你可以使用如下所示的 UN*X shell：
+>
+> ```shell
+> $ SPRING_APPLICATION_JSON='{"acme":{"name":"test"}}' java -jar myapp.jar
+> ```
+>
+> 在前面的例子中，在Spring环境中，你最终会得到acme.name=test。你也可以通过JSON格式指定spring.application.json的系统属性值，如下所示：
+>
+> ```shell
+> $ java -Dspring.application.json='{"name":"test"}' -jar myapp.jar
+> ```
+>
+> 你也可以通过使用命令行参数来提供JSON，如下所示：
+>
+> ```shell
+> $ java -jar myapp.jar --spring.application.json='{"name":"test"}'
+> ```
+>
+> 你也可以通过JNDI变量提供JSON，如下：
+>
+> ```properties
+> java:comp/env/spring.application.json.
+> ```
+
+### 配置随机值
+
+RandomValuePropertySource对注入随机值很有用（例如， 加密或者测试用例）。他可以生产integers, longs, uuids, 或者 strings,如下所示：
+
+```properties
+my.secret=${random.value}
+my.number=${random.int}
+my.bignumber=${random.long}
+my.uuid=${random.uuid}
+my.number.less.than.ten=${random.int(10)}
+my.number.in.range=${random.int[1024,65536]}
+```
+
+random.int *语法是OPEN值（，max）CLOSE，其中OPEN，CLOSE是任何字符和值，max是整数。如果提供了max，则value是最小值，max是最大值（不包括）。
+
+### 访问命令行属性
+
+默认情况下，SpringApplication会转换任何的命令行参数选项值（换言之，--为前缀的，诸如 `--server.port=9000`）添加它们到spring环境中。如前面所说，命令行参数属性会优先于其他任何属性源。
+
+如果你不希望添加命令行参数到环境，你可以使用`SpringApplication.setAddCommandLineProperties(false).`禁用它们。
+
+### 应用程序属性文件
+
+application.properties文件的属性会被SpringApplication读取并且添加它们到Spring环境中：
+
+1. 当前目录下的/config子目录
+2. 当前目录
+3. classpath下的/config包
+4. classpath根目录
+
+这个列表是按优先顺序排列的（在列表中较高位置定义的属性覆盖了较低位置定义的属性）
+
+> **注意**
+>
+> 您还可以使用YAML（'.yml'）文件作为'.properties'的替代。
+
+如果你不喜欢 application.properties 作为你的配置文件名，你可以通过指定spring.config.name环境属性来切换文件名。 你也可以用 spring.config.location环境属性来表示一个明确的位置（这是一个逗号分隔的目录位置或文件路径列表）。如下所示：
+
+```shell
+$ java -jar myproject.jar --spring.config.name=myproject
+```
+
+下面是如何指定两个位置的配置：
+
+```shell
+$ java -jar myproject.jar --spring.config.location=classpath:/default.properties,classpath:/override.properties
+```
+
+> **警告**
+>
+> spring.config.name 和 spring.config.location都很容易决定哪个文件被加载。所以它们必须被定义为环境属性（典型的是：OS环境变量，系统属性，或者命令行参数）
+
+如果spring.config.location包含的是一个目录（而不是文件），它们必须后缀是/（并且，在运行时，在加载之前附加从spring.config.name生成的名称，包括特定于配置文件的文件名）。spring.config.location中指定的文件按原样使用，不支持特殊概要文件的变体，并且被任何特定于概要文件的属性所覆盖。
+
+配置位置按倒序进行搜索。默认情况下，配置位置为`classpath:/, classpath:/config/, file:./, file:./config/`。 查询返回结果的顺序是：
+
+1.  file:./config/
+2.  file:./
+3.  classpath:/config/
+4.  classpath:/
+
+当通过spring.config.location定制配置顺序的时候，它们会覆盖掉默认位置配置。例如，如果 spring.config.location配置的值为`classpath:/custom-config/,file:./custom-config/`，搜索顺序就会变成如下所示：
+
+1.  file:./custom-config/
+2.  classpath:custom-config/
+
+二选其一，当使用spring.config.additional-location属性定制配置文件位置的时候，它们会被添加到默认位置中。添加的位置会在默认位置前面。例如，如果添加的位置为`classpath:/custom-config/,file:./custom-config/`，搜索的顺序会变成如下所示：
+
+1.  file:./custom-config/
+2.  classpath:custom-config/
+3.  file:./config/
+4.  file:./
+5.  classpath:/config/
+6.  classpath:/
+
+这种搜索顺序允许您在一个配置文件中指定默认值，然后在另一个配置文件中选择性地覆盖这些值。你可以通过application.properties 在你的应该程序中指定默认值（或者使用spring.config.name选择的任何其他基本名称）在一个默认的位置。然后，可以在运行时使用位于其中一个自定义位置的不同文件覆盖这些默认值。
+
+> **注意**
+>
+> 如果你使用环境变量而不是系统属性，大多数操作系统都不允许使用句点分隔的键名，但是你可以使用下划线代替（例如，SPRING_CONFIG_NAME代替spring.config.name）。
+
+> **注意**
+>
+> 如果你的应用程序在容器中运行，然后可以使用JNDI属性（在java：comp / env中）或servlet上下文初始化参数来代替环境变量或系统属性。
+
+### Profile-specific属性
+
+除了application.properties文件，还可以使用以下命名约定来定义Profile-specific属性： application-{profile}.properties。环境默认有设置一个默认的profile（默认情况下，[default]）如果没有设置active profiles的时候。换句话说，如果没有显式设置profile，application-default.properties的属性会被加载。
+
+application.properties同一位置的Profile-specific的属性会被加载，profile-secific文件总是覆盖非特定的属性，不管 profile-specific文件是在你的jar内还是jar包外。
+
+如果指定了几个profile，最后一种策略是适用的。例如，spring.profiles.active属性指定的配置文件是在通过SpringApplication API配置的配置文件之后添加的，因此优先。
+
+> **警告**
+>
+> 如果你通过spring.config.location指定了一些文件， profile-specific这些文件的变体将不会被使用。如果你还想使用profile-specific的属性，请在spring.config.location的目录中使用。
+
+### 属性中的占位符
+
+application.properties中的值在使用时通过现有环境进行过滤，所以你可以参考之前定义的值（例如，在系统属性中）。
+
+```properties
+app.name=MyApp
+app.description=${app.name} is a Spring Boot application
+```
+
+> **提示**
+>
+> 你可以使用这个技术在Spring Boot属性中去创建“简短”变体。
+
+### 使用YAML代替Properties
+
+YAML是JSON的超集，例如，是指定分层配置数据的方便格式。SpringApplication类会自动提示YAML供你选择，如果你有[SnakeYAML](http://www.snakeyaml.org/) 库在你的classpath。
+
+> **注意**
+>
+> 如果你使用“Starters”，SnakeYAML可以通过 spring-boot-starter自动注入。
+
+#### 加载YAML
+
+Spring Framework提供了两个方便的类，可用于加载YAML文档.YamlPropertiesFactoryBean加载YAML的属性，YamlMapFactoryBean作为一个集合加载YAML。
+
+例如，考虑以下YAML文档：
+
+```yaml
+environments:
+	dev:
+		url: http://dev.example.com
+		name: Developer Setup
+	prod:
+		url: http://another.example.com
+		name: My Cool App
+```
+
+前面的例子将被转换为以下属性：
+
+```properties
+environments.dev.url=http://dev.example.com
+environments.dev.name=Developer Setup
+environments.prod.url=http://another.example.com
+environments.prod.name=My Cool App
+```
+
+YAML列表表示为具有[index] *dereferencers*的属性键,例如YAML: 
+
+```yaml
+my:
+	servers:
+		- dev.example.com
+		- another.example.com
+```
+
+前面的例子将被转换为以下属性：
+
+```properties
+my.servers[0]=dev.example.com
+my.servers[1]=another.example.com
+```
+
+使用Spring Boot的Binder工具绑定这样的属性（就是@ConfigurationProperties做的事情），你需要在java.util.List（或Set）类型的目标bean中有一个属性，你需要提供一个setter或用一个可变值初始化它。
+
+例如，下面的例子与前面显示的属性绑定：
+
+```java
+@ConfigurationProperties(prefix="my")
+public class Config {
+  
+    private List<String> servers = new ArrayList<String>();
+    
+    public List<String> getServers() {
+    	return this.servers;
+    }
+}
+```
+
+#### 在Spring环境中公开YAML作为属性
+
+YamlPropertySourceLoader类可用于在Spring环境中将YAML公开为PropertySource。让你可以使用@Value注解的占位符语法访问到YAML属性。
+
+#### Multi-profile YAML文件
+
+您可以使用spring.profiles键在单个文件中指定多个profile-specific文件的YAML文档，以指示文档何时适用，如下所示：
+
+```yaml
+server:
+	address: 192.168.1.100
+---
+spring:
+	profiles: development
+server:
+	address: 127.0.0.1
+---
+spring:
+	profiles: production
+server:
+	address: 192.168.1.120
+```
+
+在前面的例子中，如果development profiles处于活跃状态，`server.address`值为：127.0.0.1。同样道理，production profiles处于活跃状态，`server.address`值为：192.168.1.120。如果development和production profiles都不启用，那么值为：192.168.1.100
+
+如果应用程序启动的时候没有明确的active，那么默认的profiles将会被激活。所以，在下面的YAML中，我们可以设置spring.security.user.password的值仅在默认profile可用：
+
+```yaml
+server:
+	port: 8000
+---
+spring:
+	profiles: default
+    security:
+        user:
+            password: weak
+```
+
+然而，如下所示的例子，密码仅仅在不附加任何的profile的时候赋值，它必须在所有其他配置文件中显式重置：
+
+```yaml
+server:
+	port: 8000
+spring:
+	security:
+		user:
+			password: weak
+```
+
+使用spring.profiles元素指定的Spring配置文件，可以随意使用！字符来达到否的效果。如果为单个文档指定了否定和非否定的配置文件，至少一个非否定的配置文件必须匹配，并且没有否定的配置文件可能匹配。
+
+#### YAML缺点
+
+使用@PropertySource注解的时候，YAML文件不能被加载。因此，在需要以这种方式加载值的情况下，需要使用属性文件
+
+### 类型安全的配置属性
+
+有些时候，使用@Value("${property}")注解注入属性配置会变得难以处理。特别是如果你使用多个属性或者你的数据在本质上是分层的。Spring Boot提供了一种使用属性的替代方法，该方法允许强类型bean管理和验证应用程序的配置，如下所示：
+
+```java
+package com.example;
+
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties("acme")
+public class AcmeProperties {
+	private boolean enabled;
+	private InetAddress remoteAddress;
+	private final Security security = new Security();
+
+	public boolean isEnabled() { ... }
+	
+	public void setEnabled(boolean enabled) { ... }
+	
+	public InetAddress getRemoteAddress() { ... }
+	
+	public void setRemoteAddress(InetAddress remoteAddress) { ... }
+	
+	public Security getSecurity() { ... }
+
+	public static class Security {
+		private String username;
+		private String password;
+		private List<String> roles = new ArrayList<>(Collections.singleton("USER"));
+
+		public String getUsername() { ... }
+		
+		public void setUsername(String username) { ... }
+		
+		public String getPassword() { ... }
+		
+		public void setPassword(String password) { ... }
+		
+		public List<String> getRoles() { ... }
+		
+		public void setRoles(List<String> roles) { ... }
+	}
 }
 ```
 
