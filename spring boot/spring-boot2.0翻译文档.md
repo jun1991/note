@@ -672,6 +672,8 @@ public class Application {
 
 
 
+
+
 提示：如果你意外运行了两次你的web应用，你会看到一个错误“Port already in use”。 STS用户可以使用重启按钮而不是Run按钮来确保任何现有的实例都被关闭。
 
 ### 运行一个打包好的应用
@@ -1612,6 +1614,102 @@ public class AcmeProperties {
 		
 		public void setRoles(List<String> roles) { ... }
 	}
+}
+```
+
+前面的POJO定义了以下属性：
+
+-  acme.enabled, 默认值为false
+-  acme.remote-address，类型会被强制为String
+-  acme.security.username，有一个内嵌的“security”对象，他的名字是由属性名字决定的。特别是，返回类型根本没有使用，可能是SecurityProperties。
+-  acme.security.password。
+-  acme.security.roles，是一个String集合
+
+> **注意**
+>
+> getter和setter通常是必需的，因为绑定是通过标准Java Beans属性描述符进行的，就行在Spring MVC一样。在下列情况下可以省略setter：
+>
+> - Maps,只要是它们已经初始化了的，需要getter但是setter不是必须的，因为它们可以被绑定。
+> - 集合和数组都可以通过索引访问（通常使用YAML）或者使用单一的以逗号分割的值（properties）。最后一种情况，setter是强制需要的。我们建议总是为此类类型添加一个setter。如果你初始化一个集合，确定他是不变的（如前面的例子所示）。
+> - 如果嵌套的POJO属性需要初始化（例如上面例子所示的Security字段）。setter不是必须的。如果希望绑定器使用其默认构造函数动态创建实例，你需要一个setter。
+>
+> 一些人在项目中使用Lombox自动注入的方式去添加getter和setters。需要确保Lombok没有为这种类型生成任何特定的构造函数，因为它被容器自动用于实例化对象。
+>
+> 最后，只考虑标准Java Bean属性，不支持对静态属性进行绑定。
+
+你还需要在@EnableConfigurationProperties注解中列出需要注册的属性配置类，如下所示：
+
+```java
+@Configuration
+@EnableConfigurationProperties(AcmeProperties.class)
+public class MyConfiguration {
+}
+```
+
+> **注意**
+>
+> 当@ConfigurationProperties bean以这种方式注册的时候，bean会有一个常规的名字：<prefix>-<fqn>，其中<prefix>是@ConfigurationProperties注释中指定的环境键前缀，<fqn>是bean的完全限定名称。如果注解不提供任何的前缀，则仅使用bean的完全限定名称。
+>
+> 上面例子中的bean名是：acme-com.example.AcmeProperties
+
+即使前面的配置为AcmeProperties创建了一个常规bean，我们建议@ConfigurationProperties仅处理环境变量，特别是不从上下文中注入其他bean。话虽如此，@ EnableConfigurationProperties注释也会自动应用于您的项目，以便从环境配置任何使用@ConfigurationProperties注释的现有bean。当确定AcmeProperties是一个存在的bean，你可以在MyConfiguration中快捷的使用，如下所示：
+
+```java
+@Component
+@ConfigurationProperties(prefix="acme")
+public class AcmeProperties {
+// ... see the preceding example
+}
+```
+
+这种配置风格特别适合于SpringApplication外部YAML配置,如下所示：
+
+```yaml
+# application.yml
+acme:
+  remote-address: 192.168.1.1
+  security:
+  username: admin
+  roles:
+    - USER
+    - ADMIN
+# additional configuration as required
+```
+
+在@ConfigurationProperties 的bean中，您可以以与其他bean相同的方式注入它们，如下所示：
+
+```java
+@Service
+public class MyService {
+    private final AcmeProperties properties;
+    @Autowired
+    public MyService(AcmeProperties properties) {
+        this.properties = properties;
+    }
+    //...
+    @PostConstruct
+    public void openConnection() {
+        Server server = new Server(this.properties.getRemoteAddress());
+        // ...
+    }
+}
+```
+
+> 提示
+>
+> 使用@ConfigurationProperties还可以生成元数据文件，IDE可以使用它们为您提供自动补全key的功能。
+
+#### 第三方Configuration
+
+除了在类上使用@ConfigurationProperties注解之外，您还可以在公共@Bean方法上使用它。当您想要将属性绑定到控件之外的第三方组件时，这样做会特别有用。
+
+要从Environment属性配置bean，请将@ConfigurationProperties添加到其bean注册中，如下所示：
+
+```java
+@ConfigurationProperties(prefix = "another")
+@Bean
+public AnotherComponent anotherComponent() {
+	...
 }
 ```
 
